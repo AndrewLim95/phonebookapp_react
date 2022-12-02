@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import phoneBookService from './services/phoneBook'
 
-const Contact = ({person}) => {
+const Contact = ({person,delContact}) => {
   return (
-      <li>{person.name} {person.number}</li>
+      <li>{person.name} {person.number} <button onClick={delContact}>delete</button></li>
   )
 } 
 
@@ -14,10 +15,10 @@ const App = (props) => {
   const [newFilter, setNewFilter] = useState('')
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
+    phoneBookService
+      .getAll()
+      .then(initialPhoneBook => {
+        setPersons(initialPhoneBook)
       })
   }, [])
 
@@ -42,12 +43,23 @@ const App = (props) => {
       name: newName,
       number: newNumber
     }
-    setPersons(persons.concat(personObject))
-    setNewNumber('')
-    setNewName('')
+    phoneBookService
+    .create(personObject)
+    .then(returnedPhoneBook => {
+      setPersons(persons.concat(returnedPhoneBook))
+    })
   }
-  
-  const handleContactChange = (event) => {
+
+  const delContact = (event) => {
+    event.preventDefault()
+    
+    phoneBookService
+    .delete(event.target.id)
+    .then(deletedPhoneBook => {
+      setPersons(persons.pop(deletedPhoneBook))
+    })
+  }
+  const handleNameChange = (event) => {
     setNewName(event.target.value)
   }
 
@@ -69,7 +81,7 @@ const App = (props) => {
         <div>
           name: <input 
           value={newName}
-          onChange={handleContactChange} />
+          onChange={handleNameChange} />
           number: <input 
           value={newNumber}
           onChange={handleNumberChange} />
@@ -80,7 +92,7 @@ const App = (props) => {
       </form>
       <h2>Name, Number</h2>
         {filteredPerson.map(person => 
-        <Contact key={person.id} person={person}/>)
+        <Contact key={person.id} person={person} delContact={delContact}/>)
         }
 
     </div>
